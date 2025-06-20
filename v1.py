@@ -210,7 +210,7 @@ x_malla_dfm, y_malla_dfm, w_aprox, norm_hist = resolver_poisson_dfm(a_val, b_val
 
 if w_aprox is not None:
     # Preparación de datos para gráficos 3D y de superficie
-    X_dfm, Y_dfm = np.meshgrid(x_malla_dfm, y_malla_dfm)
+    X_dfm, Y_dfm = np.meshgrid(x_malla_dfm, y_malla_dfm,indexing='ij') #meshgrid con indexing='ij' para mantener la correspondencia con las mallas de DFM 
     Z_analitica = solucion_analitica(X_dfm, Y_dfm)
 
     # --- Gráficos ya implementados: Solución Analítica 3D, Aproximación DFM 3D ---
