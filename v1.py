@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm # Importar para usar otros colormaps
+from matplotlib import cm
+import os
+import datetime
 
 def resolver_poisson_dfm(a, b, c, d, n, m, tol, N_max):
     """
@@ -195,6 +197,18 @@ def solucion_analitica(x_val, y_val):
     """
     return np.cos(x_val) * np.cos(y_val)
 
+# --- Configuración para guardar las imágenes ---
+def setup_output_directory():
+    base_dir = "resultados_simulacion"
+    run_number = 1
+    output_dir = base_dir
+    while os.path.exists(output_dir):
+        output_dir = f"{base_dir}_{run_number}"
+        run_number += 1
+    os.makedirs(output_dir)
+    print(f"Las imágenes se guardarán en: {output_dir}")
+    return output_dir
+
 # Parámetros del dominio y la malla 
 a_val = 0
 b_val = np.pi
@@ -205,6 +219,9 @@ m_val = 20 # Número de subdivisiones en y
 tol_val = 1e-5 # Tolerancia para la convergencia 
 N_max_val = 1000 # Número máximo de iteraciones 
 
+# Crear el directorio de salida
+output_directory = setup_output_directory()
+
 print(f"Iniciando DFM para la ecuación de Poisson con n={n_val}, m={m_val}")
 x_malla_dfm, y_malla_dfm, w_aprox, norm_hist = resolver_poisson_dfm(a_val, b_val, c_val, d_val, n_val, m_val, tol_val, N_max_val)
 
@@ -213,7 +230,7 @@ if w_aprox is not None:
     X_dfm, Y_dfm = np.meshgrid(x_malla_dfm, y_malla_dfm)
     Z_analitica = solucion_analitica(X_dfm, Y_dfm)
 
-    # --- Gráficos ya implementados: Solución Analítica 3D, Aproximación DFM 3D ---
+    # --- Gráficos: Solución Analítica 3D, Aproximación DFM 3D ---
     print("\nGenerando gráficas 3D de Solución Analítica y Aproximación DFM...")
     fig_3d, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7), subplot_kw={'projection': '3d'})
 
@@ -232,9 +249,10 @@ if w_aprox is not None:
     ax2.set_zlabel('w(x,y)')
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(output_directory, 'soluciones_3d.png'))
+    plt.close(fig_3d) # Cierra la figura para liberar memoria
 
-    # --- Gráfico ya implementado: Error Absoluto 3D ---
+    # --- Gráfico: Error Absoluto 3D ---
     print("\nGenerando gráfica 3D del Error Absoluto...")
     error_absoluto = np.abs(w_aprox - Z_analitica)
     fig_error_3d = plt.figure(figsize=(9, 7))
@@ -245,11 +263,10 @@ if w_aprox is not None:
     ax3_error.set_ylabel('Y')
     ax3_error.set_zlabel('Error')
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(output_directory, 'error_absoluto_3d.png'))
+    plt.close(fig_error_3d)
 
-    # --- NUEVOS GRÁFICOS ---
-
-    # 4. Mapas de Calor 2D: Solución Analítica, Aproximación DFM y Error Absoluto
+    # --- Mapas de Calor 2D: Solución Analítica, Aproximación DFM y Error Absoluto ---
     print("\nGenerando mapas de calor 2D (Solución Analítica, Aproximación DFM, Error Absoluto)...")
     fig_heatmaps, axes_heatmaps = plt.subplots(1, 3, figsize=(18, 6))
 
@@ -275,9 +292,10 @@ if w_aprox is not None:
     fig_heatmaps.colorbar(im3, ax=axes_heatmaps[2])
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(output_directory, 'mapas_calor_2d.png'))
+    plt.close(fig_heatmaps)
 
-    # 5. Cortes Transversales (1D): Comparación de Soluciones
+    # --- Cortes Transversales (1D): Comparación de Soluciones ---
     print("\nGenerando cortes transversales (comparación 1D)...")
     fig_slices, axes_slices = plt.subplots(1, 2, figsize=(14, 6))
 
@@ -310,12 +328,13 @@ if w_aprox is not None:
     axes_slices[1].grid(True)
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(output_directory, 'cortes_transversales.png'))
+    plt.close(fig_slices)
 
-    # 6. Gráfico de Convergencia del NORM por Iteración
+    # --- Gráfico de Convergencia del NORM por Iteración ---
     print("\nGenerando gráfico de Convergencia del NORM...")
     if norm_hist: # Asegura que la lista no esté vacía
-        plt.figure(figsize=(10, 6))
+        fig_norm_hist = plt.figure(figsize=(10, 6))
         # Escala logarítmica en el eje Y para ver la convergencia claramente
         plt.semilogy(range(1, len(norm_hist) + 1), norm_hist, marker='o', linestyle='-', markersize=4, color='darkgreen')
         plt.axhline(y=tol_val, color='red', linestyle='--', label=f'Tolerancia ({tol_val})')
@@ -324,9 +343,12 @@ if w_aprox is not None:
         plt.ylabel('NORM (Escala Logarítmica)')
         plt.grid(True, which="both", ls="-", alpha=0.7)
         plt.legend()
-        plt.show()
+        plt.savefig(os.path.join(output_directory, 'convergencia_norm.png'))
+        plt.close(fig_norm_hist)
     else:
         print("No hay historial de NORM para graficar (posiblemente N_max muy bajo o error inicial).")
 
 else:
     print("No se pudo obtener una aproximación. Revise los parámetros o la convergencia.")
+
+print(f"\nTodos los gráficos se han guardado en la carpeta '{output_directory}'.")
